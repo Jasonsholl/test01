@@ -1,6 +1,6 @@
-# SpecialHer 图片小程序（最省钱：TG → GitHub → 微信小程序）
+# SpecialHer 图片小程序（本地图片 → GitHub → 微信小程序）
 
-你每天跑一次 Python 脚本，从 Telegram 频道 `@SpecialHer` 抓取“当天”的新图片（最多 10 张），落到本地 `site/images/YYYY-MM-DD/`，生成 `site/manifest.json`，然后 `git push` 到 GitHub Public 仓库。微信小程序只需要拉取 `manifest.json` 并预览图片即可。
+你每天把图片手动下载到本地文件夹，然后跑一次导入脚本。脚本会把图片复制到 `site/images/YYYY-MM-DD/`，生成 `site/manifest.json`，再 `git push` 到 GitHub Public 仓库。微信小程序只需要拉取 `manifest.json` 并预览图片即可。
 
 ## 1) 准备（一次性）
 
@@ -11,16 +11,7 @@
 - `manifest.json`: `https://raw.githubusercontent.com/<USER>/<REPO>/<BRANCH>/site/manifest.json`
 - 图片：同域名下的 `site/images/...`
 
-### B. Telegram API（一次性）
-
-Telethon 需要你的 Telegram API：
-
-- `TG_API_ID`
-- `TG_API_HASH`
-
-获取方式：Telegram 官方 `my.telegram.org`（用你的账号登录后创建应用拿到）。
-
-### C. Python 环境
+### B. Python 环境
 
 ```bash
 cd backend
@@ -29,23 +20,27 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-首次运行会让你在终端里用手机号登录 Telegram（会生成 `backend/.tg.session` 文件，已在 `.gitignore` 里忽略）。
+本地图片导入脚本不需要 Telegram 登录。`requirements.txt` 里仍保留 Telethon，是给旧的 TG 抓取脚本备用。
 
-## 2) 每天执行（自动抓取 + 更新 manifest）
+## 2) 每天执行（导入本地图片 + 更新 manifest）
 
 在仓库根目录：
 
 ```bash
-export TG_API_ID="xxx"
-export TG_API_HASH="xxx"
-export TG_CHANNEL="SpecialHer"
-python3 backend/run_daily.py
+backend/.venv/bin/python backend/import_local.py "/你的/图片文件夹"
 ```
 
 脚本逻辑：
-- 只抓“今天（Asia/Shanghai，UTC+8）”发布的图片消息
-- 只下载没抓过的（按 `message.id` 去重）
+- 默认按“今天（Asia/Shanghai，UTC+8）”归档
+- 默认最多导入 10 张
+- 按图片内容 SHA-256 去重，重复图片不会再次导入
 - 更新 `site/index.json`（历史索引）和 `site/manifest.json`（给小程序读的最近 10 张列表）
+
+指定日期示例：
+
+```bash
+backend/.venv/bin/python backend/import_local.py "/你的/图片文件夹" --date 2026-04-29
+```
 
 ## 3) 发布到 GitHub（手动）
 
@@ -82,5 +77,5 @@ crontab -e
 加入（把路径改成你本机实际路径）：
 
 ```cron
-5 8 * * * cd /ABS/PATH/specialher-miniapp && /usr/bin/env TG_API_ID=xxx TG_API_HASH=xxx TG_CHANNEL=SpecialHer /ABS/PATH/specialher-miniapp/backend/.venv/bin/python /ABS/PATH/specialher-miniapp/backend/run_daily.py >> /ABS/PATH/specialher-miniapp/backend/cron.log 2>&1
+5 8 * * * cd /ABS/PATH/specialher-miniapp && /ABS/PATH/specialher-miniapp/backend/run_and_publish_local.sh "/ABS/PATH/downloaded-images" >> /ABS/PATH/specialher-miniapp/backend/cron.log 2>&1
 ```
