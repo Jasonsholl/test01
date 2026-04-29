@@ -2,4 +2,4 @@
 .venv/
 backend/.tg.session*
 backend/cron.log
-
+miniapp/project.private.config.json
