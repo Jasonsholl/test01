@@ -1,0 +1,5 @@
+.DS_Store
+.venv/
+backend/.tg.session*
+backend/cron.log
+
