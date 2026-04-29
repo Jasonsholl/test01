@@ -14,6 +14,9 @@ SITE_DIR = ROOT_DIR / "site"
 IMAGES_DIR = SITE_DIR / "images"
 INDEX_PATH = SITE_DIR / "index.json"
 MANIFEST_PATH = SITE_DIR / "manifest.json"
+MINIAPP_DIR = ROOT_DIR / "miniapp"
+MINIAPP_ASSETS_DIR = MINIAPP_DIR / "assets"
+LOCAL_MANIFEST_PATH = MINIAPP_DIR / "utils" / "localManifest.js"
 
 IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp"}
 
@@ -72,6 +75,37 @@ def _build_manifest(index: list[dict[str, Any]], max_items: int = 10) -> dict[st
     }
 
 
+def _sync_miniapp_bundle(manifest: dict[str, Any]) -> None:
+    if MINIAPP_ASSETS_DIR.exists():
+        shutil.rmtree(MINIAPP_ASSETS_DIR)
+    MINIAPP_ASSETS_DIR.mkdir(parents=True, exist_ok=True)
+
+    local_items: list[dict[str, Any]] = []
+    for item in manifest.get("items", []):
+        source = SITE_DIR / str(item["path"])
+        if not source.exists():
+            continue
+
+        local_path = Path("assets") / str(item["path"])
+        target = MINIAPP_DIR / local_path
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(source, target)
+
+        local_item = dict(item)
+        local_item["path"] = str(local_path).replace("\\", "/")
+        local_items.append(local_item)
+
+    local_manifest = {
+        "updatedAt": manifest.get("updatedAt", ""),
+        "count": len(local_items),
+        "items": local_items,
+    }
+    content = "module.exports = {\n  LOCAL_MANIFEST: "
+    content += json.dumps(local_manifest, ensure_ascii=False, indent=2)
+    content += "\n};\n"
+    LOCAL_MANIFEST_PATH.write_text(content, encoding="utf-8")
+
+
 def _unique_target_path(day_dir: Path, image_hash: str, suffix: str) -> Path:
     target = day_dir / f"{image_hash[:16]}{suffix.lower()}"
     counter = 2
@@ -128,7 +162,9 @@ def import_images(source: Path, date: str, limit: int, caption: str) -> int:
 
     index.sort(key=lambda item: str(item.get("datetimeUtc", "")), reverse=True)
     _dump_json(INDEX_PATH, index)
-    _dump_json(MANIFEST_PATH, _build_manifest(index, max_items=10))
+    manifest = _build_manifest(index, max_items=10)
+    _dump_json(MANIFEST_PATH, manifest)
+    _sync_miniapp_bundle(manifest)
 
     return imported
 
@@ -150,4 +186,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
