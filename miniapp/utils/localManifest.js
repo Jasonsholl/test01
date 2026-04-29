@@ -1,27 +1,27 @@
 module.exports = {
   LOCAL_MANIFEST: {
-  "updatedAt": "2026-04-29T10:11:31.762927Z",
+  "updatedAt": "2026-04-29T10:15:17.614783Z",
   "count": 4,
   "items": [
     {
       "id": "local_d55009764d33fdea",
       "date": "2026-04-29",
       "caption": "",
-      "path": "assets/images/2026-04-29/d55009764d33fdea.png",
+      "path": "assets/images/2026-04-29/d55009764d33fdea.jpg",
       "datetimeUtc": "2026-04-29T10:05:45.361778Z"
     },
     {
       "id": "local_521e414336a48a24",
       "date": "2026-04-29",
       "caption": "",
-      "path": "assets/images/2026-04-29/521e414336a48a24.jpeg",
+      "path": "assets/images/2026-04-29/521e414336a48a24.jpg",
       "datetimeUtc": "2026-04-29T10:05:45.361778Z"
     },
     {
       "id": "local_49c3601d653859e0",
       "date": "2026-04-29",
       "caption": "",
-      "path": "assets/images/2026-04-29/49c3601d653859e0.png",
+      "path": "assets/images/2026-04-29/49c3601d653859e0.jpg",
       "datetimeUtc": "2026-04-29T10:05:45.361778Z"
     },
     {

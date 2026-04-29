@@ -8,6 +8,8 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
+from PIL import Image
+
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
 SITE_DIR = ROOT_DIR / "site"
@@ -17,6 +19,8 @@ MANIFEST_PATH = SITE_DIR / "manifest.json"
 MINIAPP_DIR = ROOT_DIR / "miniapp"
 MINIAPP_ASSETS_DIR = MINIAPP_DIR / "assets"
 LOCAL_MANIFEST_PATH = MINIAPP_DIR / "utils" / "localManifest.js"
+MINIAPP_BUNDLE_MAX_EDGE = 1200
+MINIAPP_BUNDLE_QUALITY = 72
 
 IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp"}
 
@@ -75,6 +79,23 @@ def _build_manifest(index: list[dict[str, Any]], max_items: int = 10) -> dict[st
     }
 
 
+def _save_optimized_bundle_image(source: Path, target: Path) -> None:
+    with Image.open(source) as image:
+        image = image.convert("RGB")
+        image.thumbnail(
+            (MINIAPP_BUNDLE_MAX_EDGE, MINIAPP_BUNDLE_MAX_EDGE),
+            Image.Resampling.LANCZOS,
+        )
+        target.parent.mkdir(parents=True, exist_ok=True)
+        image.save(
+            target,
+            format="JPEG",
+            quality=MINIAPP_BUNDLE_QUALITY,
+            optimize=True,
+            progressive=True,
+        )
+
+
 def _sync_miniapp_bundle(manifest: dict[str, Any]) -> None:
     if MINIAPP_ASSETS_DIR.exists():
         shutil.rmtree(MINIAPP_ASSETS_DIR)
@@ -86,10 +107,10 @@ def _sync_miniapp_bundle(manifest: dict[str, Any]) -> None:
         if not source.exists():
             continue
 
-        local_path = Path("assets") / str(item["path"])
+        original_path = Path(str(item["path"]))
+        local_path = Path("assets") / original_path.with_suffix(".jpg")
         target = MINIAPP_DIR / local_path
-        target.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(source, target)
+        _save_optimized_bundle_image(source, target)
 
         local_item = dict(item)
         local_item["path"] = str(local_path).replace("\\", "/")
